@@ -1,5 +1,6 @@
 package cat.itacademy.barcelonactiva.cognoms.nom.s05.t02.Mongo.S05T2MONGO.service.impl;
 
+import cat.itacademy.barcelonactiva.cognoms.nom.s05.t02.Mongo.S05T2MONGO.exceptions.EmptyListException;
 import cat.itacademy.barcelonactiva.cognoms.nom.s05.t02.Mongo.S05T2MONGO.model.domain.Game;
 import cat.itacademy.barcelonactiva.cognoms.nom.s05.t02.Mongo.S05T2MONGO.model.domain.Player;
 import cat.itacademy.barcelonactiva.cognoms.nom.s05.t02.Mongo.S05T2MONGO.model.dto.GameDto;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,16 +28,18 @@ public class GameServiceImpl implements GameService {
         game.setPlayer(player);
         game.setWin(gameDto.isGameWin());
         gameRepository.save(game);
+        player.getGamesList().add(game);
         return gameDto;
     }
 
     @Override
-    public void deleteGames(String id) {
-       List<Game> gameList= gameRepository.findByPlayer(id);
-       if(gameList!=null){
-           gameList.forEach(gameRepository::delete);
-       }
-
+    public void deleteGames(Player player) {
+        if(player.getGamesList().isEmpty()){
+            throw new EmptyListException("This player doesn't play.");
+        } else {
+            List<Game> games = new ArrayList<>(player.getGamesList().stream().toList());
+            games.forEach(l -> gameRepository.delete(l));
+        }
     }
 
     @Override

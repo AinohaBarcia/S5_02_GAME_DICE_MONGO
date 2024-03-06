@@ -1,7 +1,9 @@
 package cat.itacademy.barcelonactiva.cognoms.nom.s05.t02.Mongo.S05T2MONGO.service.impl;
 
+import cat.itacademy.barcelonactiva.cognoms.nom.s05.t02.Mongo.S05T2MONGO.exceptions.EmptyListException;
 import cat.itacademy.barcelonactiva.cognoms.nom.s05.t02.Mongo.S05T2MONGO.exceptions.PlayerNotFoundException;
 import cat.itacademy.barcelonactiva.cognoms.nom.s05.t02.Mongo.S05T2MONGO.exceptions.RepeatedValueException;
+import cat.itacademy.barcelonactiva.cognoms.nom.s05.t02.Mongo.S05T2MONGO.model.domain.Game;
 import cat.itacademy.barcelonactiva.cognoms.nom.s05.t02.Mongo.S05T2MONGO.model.domain.Player;
 import cat.itacademy.barcelonactiva.cognoms.nom.s05.t02.Mongo.S05T2MONGO.model.dto.GameDto;
 import cat.itacademy.barcelonactiva.cognoms.nom.s05.t02.Mongo.S05T2MONGO.model.dto.PlayerDto;
@@ -58,10 +60,8 @@ public class PlayerServiceImpl implements PlayerService{
 
         return PlayerMapper.mapToPlayerDto(player);
     }
-
-
     @Override
-    public PlayerDto deltePlayerById(String id) throws PlayerNotFoundException {
+    public PlayerDto deletePlayerById(String id) throws PlayerNotFoundException {
         return playerRepository.findById(id).map(player -> {
             playerRepository.deleteById(id);
             System.out.println("Player with id: " + id + " is deleted");
@@ -80,20 +80,24 @@ public class PlayerServiceImpl implements PlayerService{
         return playerRepository.findAll();
     }
     @Override
-    public void deleteAllGames(String idPlayer) {
-        PlayerDto playerDto = getPlayerById(idPlayer);
-        restartAverage(playerDto);
-        gameService.deleteGames(idPlayer);
+    public void deleteAllGames(String id) {
+        Optional<Player> playerOptional = playerRepository.findById(id);
+        if (playerOptional.isPresent()) {
+            Player player = playerOptional.get();
+            gameService.deleteGames(player);
+            PlayerDto playerDto = restartAverage(PlayerMapper.mapToPlayerDto(player));
+        }else {
+            throw new PlayerNotFoundException( "This player doesn't exisy");
+        }
     }
-
     @Override
-    public void restartAverage(PlayerDto playerDto) {
-        if (playerDto != null) {
+    public PlayerDto restartAverage(PlayerDto playerDto) {
             playerDto.setGamesLost(0);
             playerDto.setCalculateSuccessRate(0);
             playerDto.setCalculateLostRate(0);
             playerDto.setGamesWin(0);
-        }
+
+        return playerDto;
     }
     @Override
     public double calculateSuccessRate(int totalGames, int wins) {
@@ -104,11 +108,11 @@ public class PlayerServiceImpl implements PlayerService{
     }
     public double calculatePlayerSuccessRate(String id) {
         PlayerDto playerDto = getPlayerById(id);
-        List<GameDto> playerGames = getAllGames(id);
+        List<Game> playerGames = getAllGames(id);
 
         int totalGames = playerGames.size();
         int wins = 0;
-        for (GameDto game : playerGames) {
+        for (Game game : playerGames) {
             if (game.isWin()) {
                 wins++;
             }
@@ -137,10 +141,30 @@ public class PlayerServiceImpl implements PlayerService{
         }
     }
     @Override
-    public List<GameDto> getAllGames(String id) {
-        PlayerDto playerDto = getPlayerById(id);
-        Player player = PlayerMapper.mapToPlayer(playerDto);
-        return gameService.getAllGames(player);
+    public List<Game> getAllGames(String id) {
+        Optional<Player> playerSearch = playerRepository.findById(id);
+        if (playerSearch.isPresent()) {
+            Player player = playerSearch.get();
+
+            List<Game> allGames = player.getGamesList();
+            int totalGames = allGames.size();
+            int wins = (int) allGames.stream().filter(Game::isWin).count();
+            int losses = totalGames - wins;
+
+            double winPercentage = calculateSuccessRate(totalGames, wins);
+            double lossPercentage = calculateSuccessRate(totalGames, losses);
+
+            player.setGamesWin(wins);
+            player.setCalculateSuccessRate(winPercentage);
+            player.setGamesLost(losses);
+            player.setCalculateLostRate(lossPercentage);
+
+            playerRepository.save(player);
+
+            return allGames;
+        } else {
+            throw new PlayerNotFoundException("Player with id " + id + " not found");
+        }
     }
 
     @Override
@@ -164,33 +188,34 @@ public class PlayerServiceImpl implements PlayerService{
     }
     @Override
     public void updateGameWin(String id) {
-        Optional<Player>playerSerch = playerRepository.findById(id);
-        if(playerSerch.isPresent()){
-            Player player = playerSerch.get();
-            PlayerDto playerDto = PlayerMapper.mapToPlayerDto(player);
-            playerDto.setGamesWin(playerDto.getGamesWin() + 1);
-            double newSuccessRate = ((double)playerDto.getGamesWin()/ (playerDto.getGamesListDto().size()-1)) * 100;
-            playerDto.setCalculateSuccessRate(newSuccessRate);
-            playerRepository.save(PlayerMapper.mapToPlayer(playerDto));
-        }else{
+        Optional<Player> playerOptional = playerRepository.findById(id);
+        if (playerOptional.isPresent()) {
+            Player player = playerOptional.get();
+            player.setGamesWin(player.getGamesWin() + 1);
+            double successRate= calculatePlayerSuccessRate(id);
+            player.setCalculateSuccessRate(successRate);
+
+            playerRepository.save(player);
+        } else {
             throw new PlayerNotFoundException("Player doesn't exist");
         }
     }
 
     @Override
     public void updateGameLost(String id) {
-        Optional<Player>playerSerch = playerRepository.findById(id);
-        if(playerSerch.isPresent()){
-            Player player = playerSerch.get();
-            PlayerDto playerDto = PlayerMapper.mapToPlayerDto(player);
-            playerDto.setGamesLost(playerDto.getGamesLost() + 1);
-            double newLostRate = 100 - (((double)playerDto.getGamesLost()/ (playerDto.getGamesListDto().size()-1))* 100.0);
-            playerDto.setCalculateLostRate(newLostRate);
-            playerRepository.save(PlayerMapper.mapToPlayer(playerDto));
-        }else{
+        Optional<Player> playerOptional = playerRepository.findById(id);
+        if(playerOptional.isPresent()){
+            Player player = playerOptional.get();
+            player.setGamesLost(player.getGamesLost() + 1);
+            double successRate = calculatePlayerSuccessRate(id);
+            player.setCalculateSuccessRate(successRate);
+            playerRepository.save(player);
+        } else {
             throw new PlayerNotFoundException("Player doesn't exist");
         }
     }
-
-
+   //lateLostRate(lostRate);
 }
+
+
+

@@ -1,6 +1,7 @@
 package cat.itacademy.barcelonactiva.cognoms.nom.s05.t02.Mongo.S05T2MONGO.controller;
 
 
+import cat.itacademy.barcelonactiva.cognoms.nom.s05.t02.Mongo.S05T2MONGO.model.domain.Game;
 import cat.itacademy.barcelonactiva.cognoms.nom.s05.t02.Mongo.S05T2MONGO.model.domain.Player;
 import cat.itacademy.barcelonactiva.cognoms.nom.s05.t02.Mongo.S05T2MONGO.model.dto.GameDto;
 import cat.itacademy.barcelonactiva.cognoms.nom.s05.t02.Mongo.S05T2MONGO.model.dto.PlayerDto;
@@ -64,18 +65,18 @@ public class GameController {
     }
 
     @GetMapping("/getGames/{idGame}")
-    public ResponseEntity<List<GameDto>> getAllGames(@PathVariable("idGame") String id) {
-        List<GameDto> gamesDTO = playerService.getAllGames(id);
-        if (gamesDTO.isEmpty()) {
+    public ResponseEntity<List<Game>> getAllGames(@PathVariable("idGame") String id) {
+        List<Game> games = playerService.getAllGames(id);
+        if (games.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } else {
-            return new ResponseEntity<>(gamesDTO, HttpStatus.OK);
+            return new ResponseEntity<>(games, HttpStatus.OK);
         }
     }
 
     @DeleteMapping("/deletePlayerById/{idPlayer}")
     public ResponseEntity<String> deletePlayerById(@PathVariable ("idPlayer")String id) {
-        playerService.deltePlayerById(id);
+        playerService.deletePlayerById(id);
         return new ResponseEntity<>("Player was deleted", HttpStatus.OK);
     }
 
