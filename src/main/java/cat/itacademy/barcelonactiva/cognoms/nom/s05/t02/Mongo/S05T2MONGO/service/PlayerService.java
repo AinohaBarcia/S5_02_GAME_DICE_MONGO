@@ -16,7 +16,6 @@ public interface PlayerService {
     List<Player> getAllPlayers();
 
     public GameDto play (String id);
-   // List<GameDto> getAllGames(String idPlayer);
     List<Game> getAllGames (String id);
     void deleteAllGames(String id);
     double calculateSuccessRate(int totalGames,int wins);

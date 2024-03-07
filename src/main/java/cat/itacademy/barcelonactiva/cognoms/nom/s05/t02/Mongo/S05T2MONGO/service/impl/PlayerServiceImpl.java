@@ -1,6 +1,5 @@
 package cat.itacademy.barcelonactiva.cognoms.nom.s05.t02.Mongo.S05T2MONGO.service.impl;
 
-import cat.itacademy.barcelonactiva.cognoms.nom.s05.t02.Mongo.S05T2MONGO.exceptions.EmptyListException;
 import cat.itacademy.barcelonactiva.cognoms.nom.s05.t02.Mongo.S05T2MONGO.exceptions.PlayerNotFoundException;
 import cat.itacademy.barcelonactiva.cognoms.nom.s05.t02.Mongo.S05T2MONGO.exceptions.RepeatedValueException;
 import cat.itacademy.barcelonactiva.cognoms.nom.s05.t02.Mongo.S05T2MONGO.model.domain.Game;
@@ -214,7 +213,7 @@ public class PlayerServiceImpl implements PlayerService{
             throw new PlayerNotFoundException("Player doesn't exist");
         }
     }
-   //lateLostRate(lostRate);
+
 }
 
 
